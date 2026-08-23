@@ -114,15 +114,103 @@ that can return a block decision — that hook is the entire mechanism.
 
 ## Status
 
-⚠️ **`pinocchio/` and `demo-repo/` are empty in this repo.** They were committed
-as submodule pointers with no `.gitmodules`, so the code was never pushed. To fix,
-from the machine that has the real content:
+✅ **`sameer` is live and runnable.** This checkout is connected to
+`https://github.com/akhiping/yc-greptile.git`, tracks `origin/sameer`, and was
+verified against commit `6792794` (`Merge origin/main into sameer`) on
+Aug 23, 2026.
 
-```bash
-git rm --cached pinocchio demo-repo
+Kanishk's L2 entailment code is present in `pinocchio/entailment.py` and is wired
+through `pinocchio/deterministic.py`. Sameer's deterministic detector path is the
+demo-safe path today: it needs no network and no third-party service in the
+critical loop.
+
+## Terminal setup
+
+From this folder:
+
+```powershell
+git fetch origin sameer
+git checkout sameer
+git pull --ff-only origin sameer
+
+python -m pip install -r pinocchio/requirements.txt
+python -m pytest -q pinocchio/tests
 ```
 
-then delete the nested `.git` folders inside each, commit, and push.
+API keys are read from environment variables. Create an OpenAI project key at
+`https://platform.openai.com/api-keys`, then export it before running L2
+entailment. Do not commit `.env`; it is already ignored.
+
+```powershell
+$env:OPENAI_API_KEY = "sk-..."      # enables L2 OpenAI entailment
+$env:GREPTILE_API_KEY = "..."       # optional if not already logged in
+greptile whoami
+```
+
+This machine currently has Greptile CLI `3.4.1` signed in as
+`nagarsam8989@gmail.com` via API-key auth. `OPENAI_API_KEY` is not set in this
+shell, so the OpenAI-backed entailment layer will stay disabled until a real key
+is exported.
+
+Useful Greptile command:
+
+```powershell
+greptile review --json --instructions "Review Pinocchio's verifier and loop for demo-blocking bugs."
+```
+
+## Run the loop
+
+Rebuild the disposable trap repo, then run the Codex/Pinocchio loop:
+
+```powershell
+python demo-repo/arm.py
+python pinocchio/loop.py --repo .\.demo-target --max-iterations 3 --timeout 240 --json
+```
+
+For a verifier-only smoke test:
+
+```powershell
+python pinocchio/pinocchio.py analyze .\.demo-target --engine detectors:run --output .\.pinocchio\live-report.json
+python pinocchio/nose_ui.py .\.pinocchio\live-report.json
+```
+
+## Proof from this checkout
+
+Commands run successfully on Aug 23, 2026:
+
+```text
+git pull --ff-only origin sameer
+# Already up to date.
+
+python -m pytest -q pinocchio\tests
+# 66 passed in 50.26s
+
+python demo-repo\arm.py
+# Armed: C:\Users\nagar\Downloads\YC Hackathon\.demo-target
+# Suite: 2 failed, 1 passed in 0.02s
+
+python pinocchio\loop.py --repo .\.demo-target --max-iterations 1 --timeout 240 --json
+# OUTCOME: verified after 1 iteration(s)
+# final_nose: 0
+
+python -m pytest -q
+# in .demo-target: 3 passed in 0.02s
+
+python pinocchio\pinocchio.py analyze .\.demo-target --engine detectors:run --output .\.pinocchio\live-report.json
+# Results: 4 verified | 0 lies | 1 uncertain
+```
+
+The live loop changed only `.demo-target/calc_interest.py`, replacing annual
+compounding with monthly compounding:
+
+```diff
+-    total = principal * (1 + rate) ** (months / 12)
++    total = principal * (1 + rate / 12) ** months
+```
+
+The single remaining `UNCERTAIN` result is D4 phantom execution, because Codex
+CLI `0.137.0` still did not emit the PostToolUse ledger hook in this run. The
+veto/hook code is tested directly, and `docs/HOOKS.md` documents the hook probe.
 
 ## Working rules
 

@@ -2,4 +2,9 @@
 # Critical: Sameer is on Windows and D1/D2/D3 read git diffs.
 *.py   text eol=lf
 *.json text eol=lf
+*.js   text eol=lf
+*.ts   text eol=lf
+*.tsx  text eol=lf
+*.css  text eol=lf
+*.html text eol=lf
 *.sh   text eol=lf

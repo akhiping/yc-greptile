@@ -1,10 +1,16 @@
 venv/
+node_modules/
 __pycache__/
 *.pyc
 .env
 *.egg-info/
 dist/
+!demo/landing/dist/
+!demo/landing/dist/**
 build/
+*.tsbuildinfo
+vite.config.d.ts
+vite.config.js
 .pytest_cache/
 __pycache__/
 .demo-target/

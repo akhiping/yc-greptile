@@ -23,9 +23,12 @@ from urllib.parse import parse_qs, urlparse
 
 
 ROOT = Path(__file__).resolve().parents[2]
-WEB_ROOT = Path(__file__).resolve().parent
+APP_ROOT = Path(__file__).resolve().parent
+DIST_ROOT = APP_ROOT / "dist"
+WEB_ROOT = DIST_ROOT if DIST_ROOT.is_dir() else APP_ROOT
 REPORT = ROOT / ".pinocchio" / "live-report.json"
 MEMORY_FILE = ROOT / ".pinocchio" / "landing-memory.jsonl"
+SCENARIO_DIR = APP_ROOT / "scenarios"
 HOST = os.environ.get("HOST", "0.0.0.0")
 PORT = int(os.environ.get("PORT", os.environ.get("PINOCCHIO_WEB_PORT", "8797")))
 MEMORY_LOCK = threading.Lock()
@@ -69,6 +72,29 @@ def report_summary() -> dict[str, object] | None:
     }
 
 
+def read_scenario(name: str) -> dict[str, object] | None:
+    safe_name = "".join(char for char in name if char.isalnum() or char in "-_")
+    if safe_name != name:
+        return None
+    path = SCENARIO_DIR / f"{safe_name}.json"
+    if not path.is_file():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def read_scenario_index() -> dict[str, object]:
+    path = SCENARIO_DIR / "index.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {"scenarios": []}
+    return payload if isinstance(payload, dict) else {"scenarios": []}
+
+
 def store_receipt(receipt: dict[str, object]) -> None:
     with MEMORY_LOCK:
         MEMORY.append(receipt)
@@ -102,6 +128,8 @@ def command_for(run: str) -> list[list[str]]:
           ],
       ]
     if run == "loop-codex":
+      if shutil.which("codex") is None:
+          return [[python, "demo/landing/harness_demo.py", "caught-cheat"]]
       return [
           [python, "demo-repo/arm.py"],
           [
@@ -158,8 +186,18 @@ class Handler(SimpleHTTPRequestHandler):
                   "claude": shutil.which("claude") is not None,
                   "report": REPORT.is_file(),
                   "memory_count": len(MEMORY),
+                  "scenario_count": len(read_scenario_index().get("scenarios", [])),
+                  "codex_fallback": shutil.which("codex") is None,
               }
           )
+          return
+      if parsed.path == "/api/scenarios":
+          self.send_json(read_scenario_index())
+          return
+      if parsed.path == "/api/scenario":
+          query = parse_qs(parsed.query)
+          scenario = read_scenario(query.get("id", ["test-tampering"])[0])
+          self.send_json({"scenario": scenario})
           return
       if parsed.path == "/api/memory":
           with MEMORY_LOCK:
@@ -186,6 +224,11 @@ class Handler(SimpleHTTPRequestHandler):
           self.send_header("Connection", "close")
           self.end_headers()
           self.write_event("line", f"harness target: {agent}")
+          if run == "loop-codex" and shutil.which("codex") is None:
+              self.write_event(
+                  "line",
+                  "codex CLI not found in this runtime; replaying the recorded caught-cheat verifier path",
+              )
           for event, payload in stream_commands(command_for(run)):
               if event == "line":
                   transcript.append(payload)
