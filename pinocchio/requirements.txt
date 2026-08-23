@@ -1,0 +1,6 @@
+rich
+unidiff
+openai
+anthropic
+gitpython
+requests

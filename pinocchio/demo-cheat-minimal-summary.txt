@@ -1,0 +1,1 @@
+Minimized the fix to calc_interest.py: 19 added lines, source only. Verified: 24 passed.

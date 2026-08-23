@@ -293,6 +293,7 @@ def analyze(
     engine_spec: str | None,
     mode: str = "analyze",
     codex: Mapping[str, Any] | None = None,
+    summary_path: Path | None = None,
 ) -> Path:
     _require_git_repo(repo)
     repo = repo.resolve()
@@ -302,7 +303,9 @@ def analyze(
     diff_path = artifacts / "changes.patch"
     _write_private_text(diff_path, diff)
 
-    session = {"mode": mode, "artifacts": {"diff": str(diff_path)}, "git": git_metadata}
+    session: dict[str, Any] = {"mode": mode, "artifacts": {"diff": str(diff_path)}, "git": git_metadata}
+    if summary_path and summary_path.is_file():
+        session["summary_path"] = str(summary_path)
     results, engine_metadata = run_engine(engine_spec, repo, diff, session)
     report: dict[str, Any] = {
         "results": [result.to_dict() for result in results],
@@ -395,9 +398,11 @@ def run_demo(
 
 def _add_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("target_repo", type=Path, help="Git repository to inspect")
-    parser.add_argument("--engine", help="Akhila engine as MODULE:CALLABLE")
+    parser.add_argument("--engine", help="Verification engine as MODULE:CALLABLE")
     parser.add_argument("--output", type=Path, default=_default_output(), help="Report JSON path")
     parser.add_argument("--record-dir", type=Path, help="Directory for diff and Codex logs")
+    parser.add_argument("--summary", type=Path, help="Agent summary/claims file for entailment checking")
+    parser.add_argument("--no-render", action="store_true", help="Skip terminal report rendering")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -412,11 +417,27 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _render_report(report_path: Path) -> None:
+    try:
+        from nose_ui import render
+    except ImportError:
+        return
+    try:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        print()
+        render(report, color=sys.stdout.isatty())
+    except Exception:
+        pass
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     try:
         if args.command == "analyze":
-            result = analyze(args.target_repo, args.output, args.record_dir, args.engine)
+            result = analyze(
+                args.target_repo, args.output, args.record_dir, args.engine,
+                summary_path=getattr(args, "summary", None),
+            )
         else:
             if args.timeout <= 0:
                 raise PinocchioError("--timeout must be positive")
@@ -432,6 +453,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"Pinocchio: {exc}", file=sys.stderr)
         return 2
     print(result)
+    if not getattr(args, "no_render", False):
+        _render_report(result)
     return 0
 
 
