@@ -4,3 +4,4 @@ openai
 anthropic
 gitpython
 requests
+pytest

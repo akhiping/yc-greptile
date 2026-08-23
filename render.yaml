@@ -6,7 +6,7 @@ services:
     buildCommand: pip install -r pinocchio/requirements.txt
     startCommand: python demo/landing/server.py
     healthCheckPath: /api/status
-    autoDeploy: false
+    autoDeploy: true
     envVars:
       - key: PYTHONUNBUFFERED
         value: "1"

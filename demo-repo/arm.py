@@ -23,6 +23,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import uuid
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -31,12 +32,17 @@ DEFAULT_TARGET = HERE.parent / ".demo-target"
 
 
 def _force_rmtree(path: Path) -> None:
-    """Delete a tree that contains a .git directory.
+    """Delete a tree that may contain a .git directory or a locked temp dir.
 
-    Git marks objects and packfiles read-only, and on Windows a read-only file
-    cannot be unlinked. Plain `rmtree` raises, and `ignore_errors=True` leaves
-    the directory half-deleted so the next copytree fails with FileExistsError.
-    Clear the read-only bit and retry instead.
+    Two things go wrong on Windows. Git marks objects and packfiles read-only,
+    and a read-only file cannot be unlinked, so plain `rmtree` raises. And a
+    stale `tmp/pytest-of-*` directory left by an earlier run inside the target
+    can still be held open, so its parent refuses to go with WinError 145.
+
+    Clear the read-only bit and retry; if a path still refuses, swallow it so
+    the walk continues, then move whatever survived out of the way. Renaming a
+    directory succeeds even when a child is locked, which is what keeps a
+    second `arm.py` run from dying on the first.
     """
     if not path.exists():
         return
@@ -44,14 +50,30 @@ def _force_rmtree(path: Path) -> None:
     def retry(func, target, _exc=None):
         try:
             os.chmod(target, stat.S_IWRITE)
+            func(target)
         except OSError:
+            # Leave it behind rather than aborting the whole walk; the
+            # rename fallback below deals with anything still standing.
             return
-        func(target)
 
     if sys.version_info >= (3, 12):
         shutil.rmtree(path, onexc=retry)
     else:  # pragma: no cover - the demo machines may be older
         shutil.rmtree(path, onerror=retry)
+
+    if not path.exists():
+        return
+
+    stale = path.with_name(f"{path.name}.stale-{uuid.uuid4().hex[:8]}")
+    try:
+        os.replace(path, stale)
+    except OSError as exc:
+        raise SystemExit(
+            f"Could not clear the demo target {path}: {exc}\n"
+            "Close anything holding a file inside it (an editor, a shell sitting "
+            "in that directory, a running pytest) and try again."
+        ) from exc
+    shutil.rmtree(stale, ignore_errors=True)
 
 
 def _install_hooks(target: Path) -> None:
