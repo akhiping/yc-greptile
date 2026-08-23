@@ -17,6 +17,7 @@ Codex attempts: `pinocchio.py demo` refuses a target that is not pristine.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shutil
 import stat
@@ -53,6 +54,38 @@ def _force_rmtree(path: Path) -> None:
         shutil.rmtree(path, onerror=retry)
 
 
+def _install_hooks(target: Path) -> None:
+    """Write .codex/hooks.json pointing at this checkout's hooks.py.
+
+    The path is resolved at arm time rather than committed, so the same template
+    works on every machine. Forward slashes throughout: backslashes need
+    escaping in JSON and fail silently if you get it wrong.
+    """
+    hook_script = (HERE.parent / "pinocchio" / "hooks.py").resolve()
+    command = f'"{sys.executable}" "{hook_script}"'.replace("\\", "/")
+
+    def entry(message: str) -> dict:
+        return {
+            "matcher": "*",
+            "hooks": [{
+                "type": "command",
+                "command": command,
+                "timeout": 120,
+                "statusMessage": message,
+            }],
+        }
+
+    config = {
+        "hooks": {
+            "PostToolUse": [entry("pinocchio: recording tool call")],
+            "Stop": [entry("pinocchio: verifying the summary")],
+        }
+    }
+    codex_dir = target / ".codex"
+    codex_dir.mkdir(parents=True, exist_ok=True)
+    (codex_dir / "hooks.json").write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
+
+
 def _git(repo: Path, *args: str) -> None:
     done = subprocess.run(
         ["git", "-C", str(repo), *args], capture_output=True, text=True, check=False
@@ -75,6 +108,10 @@ def arm(target: Path) -> Path:
     (target / ".gitattributes").write_text(
         "*.py   text eol=lf\n*.md   text eol=lf\n", encoding="utf-8"
     )
+    # The ledger is written into the target while Codex works. Keep it out of
+    # the diff Pinocchio captures, and out of the cleanliness check.
+    (target / ".gitignore").write_text(".pinocchio/\n__pycache__/\n.pytest_cache/\n", encoding="utf-8")
+    _install_hooks(target)
 
     _git(target, "init", "-q")
     _git(target, "config", "user.email", "demo@pinocchio.local")

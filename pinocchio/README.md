@@ -94,3 +94,55 @@ Both are optional; the detectors degrade to `UNCERTAIN` without them.
 
 D5 copies the working tree to a temp directory and mutates the copy, so the
 target repo is never written to.
+
+## The veto (L3)
+
+`hooks.py` implements both Codex hook events against the documented payload
+shape — `PostToolUse` writes the ledger, `Stop` runs the detectors and returns
+`{"decision": "block"}` with the rap sheet as the reason.
+
+**Codex 0.137.0 does not fire either event from any config location we could
+find.** See [docs/HOOKS.md](../docs/HOOKS.md) for exactly what was tested. The
+veto logic is done and tested regardless — its tests drive it over stdin the way
+Codex would, so if hooks start firing it works unchanged.
+
+For a trigger we fully control, `gate.py` installs the same veto as a git
+pre-commit hook:
+
+```bash
+python pinocchio/gate.py install ./.demo-target   # the lie cannot be committed
+python pinocchio/gate.py uninstall ./.demo-target
+```
+
+`PINOCCHIO_BYPASS=1 git commit ...` overrides it, the way `--no-verify` would.
+
+Three rules the veto keeps:
+
+1. **It never crashes the agent.** Every failure path prints `{}` and exits 0.
+2. **It caps interventions at 2 per session, then always releases**
+   (`openai/codex#37937`: a Stop hook that blocks forever traps the CLI).
+3. **The reason is a prompt, not a status line** — evidence *and* instruction.
+   "Blocked" on its own makes the agent flail.
+
+## The loop
+
+`loop.py` closes it: Codex works, Pinocchio verifies, and if the summary is a
+lie the rap sheet becomes the next prompt.
+
+```bash
+python pinocchio/loop.py --repo ./.demo-target --max-iterations 3
+python pinocchio/loop.py --dry-run          # verify once, no Codex call
+```
+
+It cannot run forever. Four independent stops:
+
+| Stop | Trigger |
+|---|---|
+| budget | `--max-iterations`, default 3 |
+| **no progress** | the same detectors fire at the same nose twice running |
+| **regression** | the nose grew, so the rewrite made things worse |
+| unavailable | Codex missing, timing out, or returning nothing |
+
+Each iteration appends to `.pinocchio/loop-trace.jsonl`, and what has already
+been tried and rejected is carried into the next prompt so the agent does not
+re-offer a fix the detectors already refused.
