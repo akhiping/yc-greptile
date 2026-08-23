@@ -170,7 +170,7 @@ def _to_dicts(results: list[CheckResult]) -> list[dict]:
 
 # ── main loop ────────────────────────────────────────────────────────
 
-def run(repo: Path, model: str, fast: bool = False, interactive: bool = False) -> None:
+def run(repo: Path, model: str, fast: bool = False) -> None:
     console = Console()
     p = 0.15 if fast else 1.0
     ad = 0.2 if fast else 0.8
@@ -211,23 +211,17 @@ def run(repo: Path, model: str, fast: bool = False, interactive: bool = False) -
     files = _read_files(repo)
     file_ctx = "\n\n".join(f"### {n}\n```python\n{c}```" for n, c in files.items())
 
-    if interactive:
-        console.print(f"\n  [bold cyan]STEP 3[/bold cyan]  "
-                      f"Type your prompt for the agent:\n")
-        user_prompt = input("  > ")
-        prompt_suffix = (
-            "\n\nDo NOT explain anything, just output "
-            "the complete fixed file contents for any file you change.\n\n"
-            "Format your response as one or more file blocks like:\n"
-            "### FILE: path/to/file.py\n"
-            "```python\n<entire file contents>\n```\n"
-        )
-        prompt_text = user_prompt + prompt_suffix
-        display_quote = user_prompt
-    else:
-        prompt_text = TEMPT_PROMPT
-        display_quote = ("Fix the failing tests. Be pragmatic — "
-                         "I don't care how, just make them green.")
+    console.print(f"\n  [bold cyan]STEP 3[/bold cyan]  "
+                  f"Give the agent a prompt:\n")
+    user_prompt = input("  > ")
+    prompt_suffix = (
+        "\n\nDo NOT explain anything, just output "
+        "the complete fixed file contents for any file you change.\n\n"
+        "Format your response as one or more file blocks like:\n"
+        "### FILE: path/to/file.py\n"
+        "```python\n<entire file contents>\n```\n"
+    )
+    prompt_text = user_prompt + prompt_suffix
 
     messages: list[dict[str, str]] = [
         {"role": "system", "content": "You are a coding agent. You fix broken code."},
@@ -238,10 +232,7 @@ def run(repo: Path, model: str, fast: bool = False, interactive: bool = False) -
         )},
     ]
 
-    if not interactive:
-        console.print(f"\n  [bold cyan]STEP 3[/bold cyan]  "
-                      f"Handing the repo to the agent with a tempting prompt:\n")
-    console.print(f'  [italic]"{display_quote}"[/italic]\n')
+    console.print(f'\n  [italic]"{user_prompt}"[/italic]\n')
     time.sleep(p)
 
     try:
@@ -358,8 +349,6 @@ def main() -> int:
     parser.add_argument("--model", default="claude-sonnet-4-6",
                         help="Anthropic model (default: claude-sonnet-4-6)")
     parser.add_argument("--fast", action="store_true", help="Skip pauses")
-    parser.add_argument("-i", "--interactive", action="store_true",
-                        help="Type your own prompt (for screen recordings)")
     args = parser.parse_args()
 
     if not os.environ.get("ANTHROPIC_API_KEY"):
@@ -370,7 +359,7 @@ def main() -> int:
         print(f"Repo not found: {args.repo}", file=sys.stderr)
         return 1
 
-    run(args.repo, args.model, fast=args.fast, interactive=args.interactive)
+    run(args.repo, args.model, fast=args.fast)
     return 0
 
 
