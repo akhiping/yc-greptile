@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -51,10 +52,24 @@ def _now() -> str:
 
 # ---------------------------------------------------------------------------
 
+def _codex_executable() -> str | None:
+    """Resolve the Codex CLI.
+
+    On Windows `codex` is a `.cmd` shim, and subprocess does not apply PATHEXT
+    the way the shell does -- passing the bare name fails with "not on PATH"
+    even though the command works fine in a terminal.
+    """
+    return shutil.which("codex")
+
+
 def run_codex(repo: Path, prompt: str, timeout: int) -> tuple[str, str | None]:
     """Return (final message, error). Never raises."""
+    executable = _codex_executable()
+    if executable is None:
+        return "", "the codex CLI is not on PATH"
+
     command = [
-        "codex", "exec",
+        executable, "exec",
         "--dangerously-bypass-hook-trust",
         "--full-auto",
         "--skip-git-repo-check",
