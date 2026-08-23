@@ -8,14 +8,20 @@ import {
   Gamepad2,
   GitBranch,
   Play,
+  RotateCcw,
   ShieldCheck,
+  ZoomIn,
+  ZoomOut,
   Sparkles,
   Terminal,
   Trophy,
   XCircle,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import brandIcon from "../assets/brand-icon.png";
 import heroImage from "../assets/pinocchio-hero.png";
+import mascotImage from "../assets/mascot-verifier.png";
+import mascotPixelImage from "../assets/mascot-verifier-pixel.png";
 
 type RunKind = "demo" | "verify" | "loop-dry" | "loop-codex";
 type AgentKind = "codex" | "claude" | "terminal";
@@ -151,23 +157,44 @@ function scenarioTerminal(scenario: Scenario) {
   ].join("\n");
 }
 
-function PinocchioAvatar({ noseLength }: { noseLength: number }) {
-  const noseWidth = 106 + Math.min(138, noseLength * 7);
+function PinocchioAvatar({
+  noseLength,
+  zoom,
+  rotation,
+  pixelMode,
+  scrollProgress,
+}: {
+  noseLength: number;
+  zoom: number;
+  rotation: number;
+  pixelMode: boolean;
+  scrollProgress: number;
+}) {
+  const lieScale = 1 + Math.min(0.18, noseLength / 90);
+  const scrollScale = 1 - scrollProgress * 0.12;
+  const scrollLift = scrollProgress * -20;
+  const liveRotation = rotation + scrollProgress * 7;
 
   return (
-    <div className="pinocchio-avatar" aria-hidden="true">
-      <div className="avatar-hat" />
-      <div className="avatar-head">
-        <span className="avatar-eye left" />
-        <span className="avatar-eye right" />
-        <span className="avatar-nose" style={{ width: `${noseWidth}px` }} />
+    <div className={`pinocchio-avatar ${pixelMode ? "pixel-mode" : ""}`} aria-hidden="true">
+      <div
+        className="mascot-live-frame"
+        style={{
+          opacity: 1 - scrollProgress * 0.22,
+          transform: `translateY(${scrollLift}px) rotate(${liveRotation}deg) scale(${zoom * lieScale * scrollScale})`,
+        }}
+      >
+        <img
+          alt=""
+          className="mascot-live-image"
+          src={pixelMode ? mascotPixelImage : mascotImage}
+        />
+        <span className="mascot-greeting">truth check live</span>
       </div>
-      <div className="avatar-body" />
       <div className="avatar-score">
         <Sparkles size={15} />
         nose {noseLength} cm
       </div>
-      <div className="avatar-shadow" />
     </div>
   );
 }
@@ -227,6 +254,10 @@ export function App() {
   const [mode, setMode] = useState("cheat");
   const [streaming, setStreaming] = useState(false);
   const [transitionTick, setTransitionTick] = useState(0);
+  const [mascotZoom, setMascotZoom] = useState(1);
+  const [mascotRotation, setMascotRotation] = useState(0);
+  const [pixelMode, setPixelMode] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const [terminalOutput, setTerminalOutput] = useState(
     `$ python demo/landing/server.py
 ready: choose a round
@@ -353,15 +384,27 @@ PINOCCHIO watches:
     setTransitionTick((tick) => tick + 1);
   }, [activeScenarioId, activeScenario]);
 
+  useEffect(() => {
+    const update = () => {
+      const progress = Math.min(1, Math.max(0, window.scrollY / 760));
+      setScrollProgress(progress);
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, []);
+
   return (
     <>
       <header className="site-header">
         <a className="brand" href="#top" aria-label="Pinocchio home">
-          <span className="brand-mark">P</span>
+          <span className="brand-mark image-mark">
+            <img alt="" src={brandIcon} />
+          </span>
           <span>Pinocchio</span>
         </a>
         <nav className="nav-links" aria-label="Primary">
-          <a href="#arena">Arena</a>
+          <a href="#arena">Proof</a>
           <a href="#harness">Harness</a>
           <a href="#pitch">Pitch</a>
           <a href="#ship">Ship</a>
@@ -381,22 +424,22 @@ PINOCCHIO watches:
               <p className="eyebrow">YC demo build - Greptile Fast Hackathon</p>
               <h1 id="hero-title">Trust the agent. Verify the ending.</h1>
               <p className="hero-lede">
-                Pinocchio turns coding-agent honesty into a game loop: Codex ships, the verifier scores the story against tests and diffs, and the nose grows when the ending is fake.
+                AI code review checks the code. Pinocchio checks the agent's story. If Codex fakes green by moving tests, hardcoding outputs, or claiming phantom runs, the nose catches it before the lie ships.
               </p>
               <div className="hero-actions">
                 <a className="button primary" href="#arena">
                   <Gamepad2 size={18} />
-                  Play the verifier
+                  Play the lie
                 </a>
                 <a className="button secondary" href="#pitch">
                   <Trophy size={18} />
-                  YC pitch
+                  See the wedge
                 </a>
               </div>
               <div className="proof-strip" aria-label="Product highlights">
-                <span>Stop-hook veto</span>
-                <span>6 deterministic detectors</span>
-                <span>Codex + Greptile-ready</span>
+                <span>Blocks false endings</span>
+                <span>5 live cheat rounds</span>
+                <span>Built for Codex workflows</span>
               </div>
             </div>
 
@@ -406,7 +449,45 @@ PINOCCHIO watches:
                 <span>agent turn intercepted</span>
                 <span className="pill">live on Render</span>
               </div>
-              <PinocchioAvatar key={`avatar-${transitionTick}`} noseLength={noseLength} />
+              <PinocchioAvatar
+                key={`avatar-${transitionTick}-${pixelMode}`}
+                noseLength={noseLength}
+                pixelMode={pixelMode}
+                rotation={mascotRotation}
+                scrollProgress={scrollProgress}
+                zoom={mascotZoom}
+              />
+              <div className="mascot-controls" aria-label="Mascot controls">
+                <button
+                  aria-label="Zoom mascot out"
+                  onClick={() => setMascotZoom((value) => Math.max(0.78, Number((value - 0.08).toFixed(2))))}
+                  type="button"
+                >
+                  <ZoomOut size={16} />
+                </button>
+                <button
+                  aria-label="Rotate mascot"
+                  onClick={() => setMascotRotation((value) => value + 18)}
+                  type="button"
+                >
+                  <RotateCcw size={16} />
+                </button>
+                <button
+                  aria-label="Zoom mascot in"
+                  onClick={() => setMascotZoom((value) => Math.min(1.28, Number((value + 0.08).toFixed(2))))}
+                  type="button"
+                >
+                  <ZoomIn size={16} />
+                </button>
+                <button
+                  aria-pressed={pixelMode}
+                  className={pixelMode ? "active" : ""}
+                  onClick={() => setPixelMode((value) => !value)}
+                  type="button"
+                >
+                  PX
+                </button>
+              </div>
               <div className="nose-meter" aria-label="Nose length">
                 <span className="nose-face" />
                 <span className="nose-bar">
@@ -417,15 +498,15 @@ PINOCCHIO watches:
               <div className="claim-stack">
                 <div className="claim-row lie">
                   <span>LIE</span>
-                  <p>"I fixed the implementation."</p>
+                  <p>Claim contradicted by the diff.</p>
                 </div>
                 <div className="claim-row verified">
                   <span>OK</span>
-                  <p>Diff and tests are checked against the claim.</p>
+                  <p>Every verdict cites a receipt.</p>
                 </div>
                 <div className="claim-row uncertain">
                   <span>?</span>
-                  <p>Missing ledgers degrade to explicit uncertainty.</p>
+                  <p>No receipt means uncertain, not guessed.</p>
                 </div>
               </div>
             </aside>
@@ -451,9 +532,9 @@ PINOCCHIO watches:
         <section id="arena" className="arena-section" aria-labelledby="arena-title">
           <div className="section-heading">
             <p className="eyebrow">Game board</p>
-            <h2 id="arena-title">Pick the agent's move. Watch the nose score it.</h2>
+            <h2 id="arena-title">Five ways agents fake green. One verifier that calls it.</h2>
             <p>
-              Every round below comes from recorded detector output in this repo. The UI is playful, but the evidence is the real Pinocchio contract report.
+              Each round is generated from this repo's real detector output. The game is playful; the receipts are production-shaped.
             </p>
           </div>
           <div className="arena-grid">
@@ -516,9 +597,9 @@ PINOCCHIO watches:
         <section id="harness" className="workbench-section" aria-labelledby="harness-title">
           <div className="section-heading">
             <p className="eyebrow">Live harness</p>
-            <h2 id="harness-title">Codex or Claude takes the wheel. Pinocchio keeps the keys.</h2>
+            <h2 id="harness-title">Codex can drive. Pinocchio owns the finish line.</h2>
             <p>
-              The browser talks to the Python harness over SSE: arm the trap repo, stream verifier output, and fall back to recorded evidence when a hosted runtime lacks the Codex CLI.
+              The browser streams a Python harness over SSE: arm the trap repo, run the verifier, and fall back to recorded evidence when a hosted runtime lacks the Codex CLI.
             </p>
           </div>
 
@@ -658,7 +739,7 @@ PINOCCHIO watches:
             <p className="eyebrow">YC pitch</p>
             <h2 id="market-title">The new row below code review.</h2>
             <p>
-              Greptile reviews code. LangSmith-style tooling observes traces. Pinocchio verifies the agent's final claim against evidence and blocks false endings before they ship.
+              Greptile reviews the diff. LangSmith-style tooling records the trace. Pinocchio verifies the final claim and blocks false endings before they become trusted work.
             </p>
           </div>
           <div className="market-grid">

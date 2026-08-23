@@ -108,6 +108,17 @@ select {
   box-shadow: 0 0 22px rgba(255, 109, 26, 0.35);
 }
 
+.brand-mark.image-mark {
+  overflow: hidden;
+  background: #210d08;
+}
+
+.brand-mark.image-mark img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .nav-links {
   gap: clamp(14px, 3vw, 34px);
   color: var(--muted);
@@ -217,8 +228,8 @@ select {
   position: relative;
   z-index: 3;
   display: grid;
-  grid-template-columns: minmax(0, 0.98fr) minmax(330px, 0.7fr);
-  gap: clamp(28px, 5vw, 70px);
+  grid-template-columns: minmax(0, 0.82fr) minmax(380px, 0.84fr);
+  gap: clamp(22px, 3.6vw, 52px);
   min-height: calc(82vh - 134px);
   align-items: center;
 }
@@ -293,8 +304,10 @@ h1 {
 }
 
 .hero-console {
-  padding: 18px;
+  max-width: 520px;
+  padding: 14px;
   align-self: center;
+  justify-self: center;
   transition:
     border-color 260ms ease,
     box-shadow 260ms ease,
@@ -324,10 +337,10 @@ h1 {
 .pinocchio-avatar {
   position: relative;
   display: grid;
-  width: min(100%, 310px);
-  min-height: 220px;
+  width: min(100%, 520px);
+  min-height: 276px;
   place-items: center;
-  margin: 16px auto 6px;
+  margin: 12px auto 8px;
   overflow: hidden;
   border: 1px solid rgba(255, 247, 236, 0.14);
   border-radius: 8px;
@@ -335,113 +348,117 @@ h1 {
     linear-gradient(145deg, rgba(84, 216, 211, 0.13), transparent 48%),
     linear-gradient(20deg, rgba(255, 109, 26, 0.16), transparent 55%),
     rgba(0, 0, 0, 0.18);
+  perspective: 900px;
 }
 
-.avatar-head {
-  position: relative;
-  z-index: 2;
-  width: 104px;
-  height: 104px;
-  border-radius: 50%;
+.mascot-live-frame {
+  position: absolute;
+  inset: 16px 12px 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 69, 58, 0.32);
+  border-radius: 8px;
   background:
-    linear-gradient(100deg, rgba(255, 247, 236, 0.22), transparent 24%),
-    repeating-radial-gradient(circle at 44% 46%, #c9854b 0 2px, #a96c3f 3px 6px);
+    radial-gradient(circle at 38% 44%, rgba(255, 109, 26, 0.12), transparent 32%),
+    rgba(0, 0, 0, 0.22);
   box-shadow:
-    inset -18px -14px 28px rgba(45, 22, 8, 0.32),
-    0 18px 54px rgba(0, 0, 0, 0.28);
-  animation: avatarBob 3.4s ease-in-out infinite;
+    0 24px 80px rgba(0, 0, 0, 0.35),
+    0 0 60px rgba(255, 69, 58, 0.12);
+  transform-origin: 50% 56%;
+  transition:
+    opacity 180ms ease,
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    filter 220ms ease;
+  animation: mascotFloat 4.8s ease-in-out infinite;
 }
 
-.avatar-hat {
+.mascot-live-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(1.08) contrast(1.04);
+  transform: scale(1.03);
+}
+
+.pinocchio-avatar.pixel-mode .mascot-live-image {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.mascot-greeting {
   position: absolute;
-  z-index: 3;
-  top: 45px;
-  width: 88px;
-  height: 34px;
-  border-radius: 8px 8px 5px 5px;
-  background: linear-gradient(180deg, #1b89a1, #0f4e67);
-  transform: rotate(-5deg);
-  box-shadow: 0 8px 0 #ffca45;
-  animation: avatarBob 3.4s ease-in-out infinite;
-}
-
-.avatar-eye {
-  position: absolute;
-  top: 42px;
-  width: 9px;
-  height: 13px;
-  border-radius: 50%;
-  background: #23150d;
-}
-
-.avatar-eye.left {
-  left: 35px;
-}
-
-.avatar-eye.right {
-  left: 61px;
-}
-
-.avatar-nose {
-  position: absolute;
-  top: 52px;
-  left: 72px;
-  width: 148px;
-  height: 19px;
+  left: 18px;
+  bottom: 16px;
+  border: 1px solid rgba(255, 247, 236, 0.18);
   border-radius: 999px;
-  background:
-    linear-gradient(90deg, rgba(255, 247, 236, 0.22), transparent 24%),
-    linear-gradient(90deg, #9f5e31, #e8a560 74%, #ffd18e);
-  box-shadow: 18px 0 34px rgba(255, 109, 26, 0.24);
-  transform-origin: left center;
-  animation: avatarNose 2.5s ease-in-out infinite;
+  padding: 7px 11px;
+  background: rgba(10, 9, 8, 0.78);
+  color: var(--paper);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  animation: greetingPulse 2.4s ease-in-out infinite;
 }
 
-.lie-alert .avatar-nose {
+.lie-alert .mascot-live-frame {
+  filter: saturate(1.2);
   animation:
-    noseSnap 780ms cubic-bezier(0.12, 1.35, 0.34, 1),
-    avatarNose 2.4s ease-in-out 780ms infinite;
+    mascotLieSnap 760ms cubic-bezier(0.12, 1.35, 0.34, 1),
+    mascotFloat 4.2s ease-in-out 760ms infinite;
 }
 
-.truth-clear .avatar-nose {
-  box-shadow: 18px 0 34px rgba(66, 211, 125, 0.18);
-}
-
-.avatar-body {
-  position: absolute;
-  z-index: 1;
-  bottom: 33px;
-  width: 82px;
-  height: 82px;
-  border-radius: 28px 28px 10px 10px;
-  background: linear-gradient(135deg, #ff6d1a 0 50%, #202a5f 51% 100%);
-  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.28);
-}
-
-.avatar-shadow {
-  position: absolute;
-  bottom: 24px;
-  width: 188px;
-  height: 18px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.28);
-  filter: blur(6px);
+.truth-clear .mascot-live-frame {
+  border-color: rgba(66, 211, 125, 0.34);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.34),
+    0 0 60px rgba(66, 211, 125, 0.12);
 }
 
 .avatar-score {
   position: absolute;
-  right: 12px;
-  bottom: 12px;
+  right: 10px;
+  bottom: 10px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   border: 1px solid rgba(255, 247, 236, 0.16);
   border-radius: 999px;
-  padding: 7px 10px;
+  padding: 6px 9px;
   background: rgba(10, 9, 8, 0.68);
   color: var(--paper);
   font-size: 0.78rem;
   font-weight: 800;
+}
+
+.mascot-controls {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 8px 0 10px;
+}
+
+.mascot-controls button {
+  display: grid;
+  min-height: 34px;
+  place-items: center;
+  border: 1px solid rgba(255, 247, 236, 0.16);
+  border-radius: 6px;
+  background: rgba(255, 247, 236, 0.07);
+  color: var(--paper);
+  cursor: pointer;
+  font-weight: 900;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.mascot-controls button:hover,
+.mascot-controls button.active {
+  transform: translateY(-1px);
+  border-color: rgba(255, 109, 26, 0.72);
+  background: rgba(255, 109, 26, 0.16);
 }
 
 .lie-alert .avatar-score {
@@ -467,7 +484,7 @@ h1 {
   grid-template-columns: 44px 1fr auto;
   gap: 12px;
   align-items: center;
-  margin: 24px 0;
+  margin: 12px 0 14px;
 }
 
 .nose-face {
@@ -509,7 +526,7 @@ h1 {
 
 .claim-stack {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .claim-row {
@@ -519,7 +536,7 @@ h1 {
   align-items: center;
   border: 1px solid rgba(255, 247, 236, 0.1);
   border-radius: 6px;
-  padding: 12px;
+  padding: 10px;
   background: rgba(255, 247, 236, 0.05);
 }
 
@@ -539,7 +556,7 @@ h1 {
 .claim-row p {
   margin: 0;
   color: var(--muted);
-  font-size: 0.92rem;
+  font-size: 0.88rem;
 }
 
 .claim-row.lie span {
@@ -1480,6 +1497,41 @@ pre {
   }
 }
 
+@keyframes mascotFloat {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -8px;
+  }
+}
+
+@keyframes mascotLieSnap {
+  0% {
+    scale: 0.94;
+    rotate: -2deg;
+  }
+  44% {
+    scale: 1.06;
+    rotate: 2deg;
+  }
+  100% {
+    scale: 1;
+    rotate: 0deg;
+  }
+}
+
+@keyframes greetingPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(255, 109, 26, 0);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(255, 109, 26, 0.22);
+  }
+}
+
 @keyframes avatarBob {
   0%,
   100% {
@@ -1619,11 +1671,17 @@ pre {
   }
 
   .pinocchio-avatar {
-    min-height: 188px;
+    min-height: 260px;
   }
 
-  .avatar-nose {
-    width: 112px;
+  .mascot-live-frame {
+    inset: 14px 10px 36px;
+  }
+
+  .mascot-greeting {
+    left: 10px;
+    bottom: 10px;
+    font-size: 0.68rem;
   }
 
   .scenario-card,
