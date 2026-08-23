@@ -41,6 +41,7 @@ def _build_display(
     lies: int,
     uncertain: int,
     phase: str = "",
+    memory: dict[str, Any] | None = None,
 ) -> Table:
     grid = Table.grid(padding=(0, 0))
     grid.add_column()
@@ -91,6 +92,22 @@ def _build_display(
         grid.add_row(detail)
         grid.add_row(Text(""))
 
+    if memory:
+        grid.add_row(Text("  ── Cricket Memory ──", style="bold magenta"))
+        prior = memory.get("prior_flags", 0)
+        patterns = memory.get("known_patterns", [])
+        files = memory.get("watch_files", [])
+        mem_line = Text()
+        mem_line.append(f"  {prior} prior sessions", style="magenta")
+        if patterns:
+            mem_line.append(f"  |  known patterns: {', '.join(patterns)}", style="dim")
+        grid.add_row(mem_line)
+        if files:
+            watch = Text()
+            watch.append(f"  watch files: {', '.join(files[:5])}", style="dim")
+            grid.add_row(watch)
+        grid.add_row(Text(""))
+
     return grid
 
 
@@ -105,6 +122,7 @@ class NoseDisplay:
         self.lies = 0
         self.uncertain = 0
         self.phase = ""
+        self.memory: dict[str, Any] | None = None
         self._live: Live | None = None
 
     def __enter__(self) -> "NoseDisplay":
@@ -121,11 +139,15 @@ class NoseDisplay:
         if self._live:
             self._live.__exit__(*args)
 
+    def set_memory(self, memory: dict[str, Any]) -> None:
+        self.memory = memory
+        self._refresh()
+
     def _render(self) -> Panel:
         grid = _build_display(
             self.results, self.nose_length,
             len(self.results), self.verified, self.lies, self.uncertain,
-            self.phase,
+            self.phase, self.memory,
         )
         border = _nose_color(self.nose_length)
         return Panel(grid, border_style=border, padding=(1, 2))
