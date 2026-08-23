@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Pinocchio verification report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "results",
+    "summary",
+    "metadata"
+  ],
+  "properties": {
+    "results": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/CheckResult"
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total",
+        "lies",
+        "verified",
+        "uncertain",
+        "nose_length"
+      ],
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "lies": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "verified": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "uncertain": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "nose_length": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "captured_at",
+        "mode",
+        "target_repo",
+        "git",
+        "engine"
+      ],
+      "properties": {
+        "captured_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "mode": {
+          "enum": [
+            "analyze",
+            "demo"
+          ]
+        },
+        "target_repo": {
+          "type": "string"
+        },
+        "git": {
+          "type": "object"
+        },
+        "engine": {
+          "type": "object"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "CheckResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claim",
+        "verdict",
+        "evidence",
+        "severity",
+        "check_type"
+      ],
+      "properties": {
+        "claim": {
+          "type": "string",
+          "minLength": 1
+        },
+        "verdict": {
+          "type": "string",
+          "enum": [
+            "LIE",
+            "VERIFIED",
+            "UNCERTAIN"
+          ]
+        },
+        "evidence": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "check_type": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}
