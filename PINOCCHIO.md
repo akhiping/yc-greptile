@@ -132,33 +132,47 @@ reason = the rap sheet. **Cap at 2 interventions per turn, then always release**
 
 ---
 
-## THE CONTRACT — FREEZE THIS FIRST, THEN SPLIT
+## THE CONTRACT — ALREADY SHIPPED, DO NOT REDESIGN IT
 
-Nobody writes code until this is agreed. It is what lets four people work in
-parallel without blocking. Stub it with fake data immediately so every layer
-has something to develop against.
+✅ **This exists.** `pinocchio/contract.json` on branch
+`copilot/alina-dashboard-react-tailwind` is a real JSON Schema (draft 2020-12)
+and `pinocchio.py` already validates against it. **It is authoritative.** Do not
+invent a second shape — conform to this one.
 
 ```json
 {
-  "verdict": "PASS | LIE",
-  "nose": 0,
-  "claims": [
-    { "text": "I fixed the interest calculation",
-      "status": "CONTRADICTED",
-      "detector": "D1",
-      "evidence": ["ledger:47"] }
+  "results": [
+    { "claim": "I fixed the interest calculation",
+      "verdict": "LIE",
+      "evidence": "No source file changed. Only edit: test_calc_interest.py:34, assertion modified.",
+      "severity": 8,
+      "check_type": "D1_test_tampering" }
   ],
-  "detectors": [
-    { "id": "D1", "name": "test_tampering", "fired": true,
-      "severity": "high",
-      "detail": "test_calc_interest.py:34 assertion modified" }
-  ],
-  "ledger": [
-    { "i": 47, "tool": "apply_patch", "path": "test_calc_interest.py",
-      "exit": 0, "ts": "13:42:11" }
-  ]
+  "summary": {
+    "total": 3, "lies": 1, "verified": 1, "uncertain": 1,
+    "nose_length": 8
+  },
+  "metadata": {
+    "captured_at": "2026-08-23T13:42:11Z",
+    "mode": "demo",
+    "target_repo": "demo-repo",
+    "git": {}, "engine": {}
+  }
 }
 ```
+
+**Key fields**
+- `verdict` — `LIE` · `VERIFIED` · `UNCERTAIN` (three states, not two — the
+  third is what keeps us honest)
+- `severity` — integer **1–10**, not a string label
+- `evidence` — a **string**, not an array. Serialise ledger references into it.
+- `check_type` — free-form string. **This is where our six detectors plug in**
+  (`D1_test_tampering`, `D4_phantom_execution`, `D5_kayfabe`, …) with **zero
+  schema changes required.**
+- `mode` — `analyze` | `demo`
+
+**Mapping from the layer names in this doc:** `CONTRADICTED → LIE`,
+`SUPPORTED → VERIFIED`, `UNVERIFIED → UNCERTAIN`.
 
 ---
 
