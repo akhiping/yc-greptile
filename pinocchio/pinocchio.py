@@ -263,8 +263,13 @@ def validate_report(report: Mapping[str, Any], contract_path: Path = CONTRACT_PA
             value = summary.get(field)
             if not isinstance(value, int) or isinstance(value, bool) or value < 0:
                 errors.append(f"summary.{field} must be a non-negative integer")
-        expected = summarize([CheckResult(**item) for item in results]) if isinstance(results, list) else {}
-        if summary != expected:
+        expected: dict[str, int] | None = None
+        if isinstance(results, list):
+            try:
+                expected = summarize([CheckResult(**item) for item in results])
+            except (TypeError, KeyError) as exc:
+                errors.append(f"could not compute expected summary from results: {exc}")
+        if expected is not None and summary != expected:
             errors.append("'summary' does not match the CheckResults")
     if not isinstance(report["metadata"], Mapping):
         errors.append("'metadata' must be an object")
