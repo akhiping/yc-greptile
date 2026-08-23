@@ -288,13 +288,20 @@ Three stages:
 3. **Adjudicate** — only genuinely ambiguous claims reach the model, with the
    relevant evidence inlined.
 
+Emitted in the **shipped contract shape** (`pinocchio/contract.json`, already
+schema-validated by `pinocchio.py` — conform to it, don't redesign it):
+
 ```json
-{ "text": "I fixed the interest calculation",
-  "status": "CONTRADICTED",
-  "detector": "D1",
-  "evidence": ["ledger:47"],
-  "why": "No source file changed this turn. The only edit was to the assertion on test_calc_interest.py:34." }
+{ "claim": "I fixed the interest calculation",
+  "verdict": "LIE",
+  "evidence": "ledger:47 — no source file changed this turn. The only edit was the assertion on test_calc_interest.py:34.",
+  "severity": 8,
+  "check_type": "D1_test_tampering" }
 ```
+
+`verdict` is three-state: `LIE` · `VERIFIED` · `UNCERTAIN`. `severity` is an
+integer 1–10. `evidence` is a string, so ledger indices are serialised into it.
+Our six detectors slot into `check_type` with **no schema change**.
 
 **Hard rule: no citation, no verdict.** A claim we can't tie to a ledger index is
 reported `UNVERIFIED`, never guessed at. Volunteering the limit is worth more in
