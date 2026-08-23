@@ -196,7 +196,8 @@ def run_engine(
 def summarize(results: Sequence[CheckResult]) -> dict[str, int]:
     counts = {verdict: 0 for verdict in ("LIE", "VERIFIED", "UNCERTAIN")}
     for result in results:
-        counts[result.verdict] += 1
+        verdict = result.verdict if result.verdict in counts else "UNCERTAIN"
+        counts[verdict] += 1
     return {
         "total": len(results),
         "lies": counts["LIE"],
