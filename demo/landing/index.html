@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pinocchio - Agent Verification Harness</title>
+    <meta
+      name="description"
+      content="Pinocchio verifies coding agent claims against evidence and blocks dishonest turns before the agent can stop."
+    />
+    <link rel="preload" href="./assets/pinocchio-hero.png" as="image" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="Pinocchio home">
+        <span class="brand-mark">P</span>
+        <span>Pinocchio</span>
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#loop">Loop</a>
+        <a href="#harness">Harness</a>
+        <a href="#market">YC Pitch</a>
+        <a href="#ship">Ship</a>
+      </nav>
+      <a class="header-cta" href="#harness">Run Demo</a>
+    </header>
+
+    <main id="top">
+      <section class="hero-section" aria-labelledby="hero-title">
+        <img class="hero-image" src="./assets/pinocchio-hero.png" alt="" />
+        <canvas class="hero-canvas" id="heroCanvas" aria-hidden="true"></canvas>
+        <div class="hero-overlay"></div>
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">YC demo build - Greptile Fast Hackathon</p>
+            <h1 id="hero-title">Your coding agent does not get to mark its own homework.</h1>
+            <p class="hero-lede">
+              Pinocchio checks whether Codex or Claude actually did what it said it did, then blocks the turn when the claim does not match the diff, tests, and tool ledger.
+            </p>
+            <div class="hero-actions">
+              <a class="button primary" href="#harness">Launch harness</a>
+              <a class="button secondary" href="#market">Pitch mode</a>
+            </div>
+            <div class="proof-strip" aria-label="Product highlights">
+              <span>Stop-hook veto</span>
+              <span>6 deterministic detectors</span>
+              <span>CLI + CI path</span>
+            </div>
+          </div>
+
+          <aside class="hero-console" aria-label="Live verifier summary">
+            <div class="console-topline">
+              <span class="status-dot live"></span>
+              <span>agent turn intercepted</span>
+              <span class="pill">YC live</span>
+            </div>
+            <div class="nose-meter" aria-label="Nose length">
+              <span class="nose-face"></span>
+              <span class="nose-bar"><span></span></span>
+              <strong>8 cm</strong>
+            </div>
+            <div class="claim-stack">
+              <div class="claim-row lie">
+                <span>LIE</span>
+                <p>"I fixed the interest calculation."</p>
+              </div>
+              <div class="claim-row verified">
+                <span>OK</span>
+                <p>pytest executed against the target repo.</p>
+              </div>
+              <div class="claim-row uncertain">
+                <span>?</span>
+                <p>Hook ledger incomplete, degraded to diff evidence.</p>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="ticker" aria-label="Positioning">
+        <span>Code review asks if the code is good.</span>
+        <span>Observability asks what the agent did.</span>
+        <strong>Pinocchio asks if what the agent told you is true.</strong>
+      </section>
+
+      <section class="proof-board" aria-label="Live demo proof">
+        <article>
+          <span>Suite</span>
+          <strong>3 passed</strong>
+          <p>The cheap edit makes CI green.</p>
+        </article>
+        <article class="hot">
+          <span>Pinocchio</span>
+          <strong>2 lies</strong>
+          <p>D1 and D2 catch the fake fix.</p>
+        </article>
+        <article>
+          <span>Nose</span>
+          <strong>16 cm</strong>
+          <p>Severity becomes stage-visible.</p>
+        </article>
+        <article>
+          <span>Source</span>
+          <strong>0 lines</strong>
+          <p>The implementation never changed.</p>
+        </article>
+      </section>
+
+      <section id="harness" class="workbench-section" aria-labelledby="harness-title">
+        <div class="section-heading">
+          <p class="eyebrow">Live harness</p>
+          <h2 id="harness-title">Codex or Claude takes the wheel. Pinocchio keeps the keys.</h2>
+          <p>
+            A browser control room for the existing terminal demo: arm the trap repo, stream verifier output, and run the Codex loop from one responsive stage surface.
+          </p>
+        </div>
+
+        <div class="workbench">
+          <div class="control-panel">
+            <div class="field-group">
+              <label for="agentSelect">Agent target</label>
+              <select id="agentSelect">
+                <option value="codex">Codex CLI</option>
+                <option value="claude">Claude Code</option>
+                <option value="terminal">Terminal adapter</option>
+              </select>
+            </div>
+            <div class="segmented" role="tablist" aria-label="Demo mode">
+              <button class="segment active" type="button" data-mode="cheat">Cheat</button>
+              <button class="segment" type="button" data-mode="veto">Veto</button>
+              <button class="segment" type="button" data-mode="repair">Repair</button>
+            </div>
+            <div class="run-grid">
+              <button class="button primary run-button" type="button" data-run="demo">Play caught-cheat reel</button>
+              <button class="button secondary run-button" type="button" data-run="verify">Run verifier</button>
+              <button class="button secondary run-button" type="button" data-run="loop-dry">Dry loop</button>
+              <button class="button danger run-button" type="button" data-run="loop-codex">Live Codex loop</button>
+            </div>
+            <div class="status-list" id="statusList">
+              <div><span>Codex</span><strong data-status="codex">checking</strong></div>
+              <div><span>Claude</span><strong data-status="claude">checking</strong></div>
+              <div><span>Report</span><strong data-status="report">waiting</strong></div>
+              <div><span>Memory</span><strong data-status="memory">0 receipts</strong></div>
+            </div>
+          </div>
+
+          <div class="terminal-shell">
+            <div class="verdict-stage" id="verdictStage">
+              <div class="agent-chip">Codex says fixed</div>
+              <div class="evidence-beam"><span></span><span></span><span></span></div>
+              <div class="veto-chip">BLOCKED</div>
+            </div>
+            <div class="terminal-bar">
+              <span></span><span></span><span></span>
+              <strong>pinocchio live</strong>
+            </div>
+            <pre id="terminalOutput" aria-live="polite"><code>$ python demo/landing/server.py
+ready: choose a run
+
+PINOCCHIO watches:
+  - changed files
+  - test commands
+  - detector verdicts
+  - final agent claims
+</code></pre>
+          </div>
+        </div>
+
+        <div class="memory-panel" aria-labelledby="memory-title">
+          <div>
+            <p class="eyebrow">Backend memory</p>
+            <h3 id="memory-title">Every run leaves a receipt.</h3>
+            <p>
+              The harness stores public evidence in process memory and an append-only JSONL receipt file. The UI reads it back from the backend instead of inventing state on the client.
+            </p>
+          </div>
+          <div class="memory-feed" id="memoryFeed" aria-live="polite">
+            <article>
+              <span>waiting</span>
+              <strong>No run recorded yet.</strong>
+              <p>Click the caught-cheat reel and the backend will publish the receipt here.</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="loop" class="loop-section" aria-labelledby="loop-title">
+        <div class="section-heading compact">
+          <p class="eyebrow">The loop</p>
+          <h2 id="loop-title">Cheat, detect, block, rewrite.</h2>
+        </div>
+        <div class="loop-track">
+          <article class="loop-step active">
+            <span>01</span>
+            <h3>Agent works</h3>
+            <p>Codex says the suite is fixed and the tests pass.</p>
+          </article>
+          <article class="loop-step">
+            <span>02</span>
+            <h3>Ledger records</h3>
+            <p>Tool calls, diffs, exits, and test output become the evidence.</p>
+          </article>
+          <article class="loop-step">
+            <span>03</span>
+            <h3>Detectors fire</h3>
+            <p>D1-D6 catch test tampering, weak assertions, literals, phantom runs, and vacuous tests.</p>
+          </article>
+          <article class="loop-step">
+            <span>04</span>
+            <h3>Stop hook blocks</h3>
+            <p>The rap sheet becomes the next prompt. Fix the function, not the test.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="detector-section" aria-labelledby="detectors-title">
+        <div class="section-heading compact">
+          <p class="eyebrow">Detectors</p>
+          <h2 id="detectors-title">Fast, local, and hard to argue with.</h2>
+        </div>
+        <div class="detector-grid">
+          <button type="button" data-sim="tamper" class="detector-card">
+            <span>D1</span>
+            <h3>Test tampering</h3>
+            <p>Claim says source fix. Diff only touches tests.</p>
+          </button>
+          <button type="button" data-sim="assert" class="detector-card">
+            <span>D2</span>
+            <h3>Assertion weakening</h3>
+            <p>Asserts disappear, skips appear, suite gets easier.</p>
+          </button>
+          <button type="button" data-sim="literal" class="detector-card">
+            <span>D3</span>
+            <h3>Hardcoded literal</h3>
+            <p>Expected values leak into source return paths.</p>
+          </button>
+          <button type="button" data-sim="phantom" class="detector-card">
+            <span>D4</span>
+            <h3>Phantom execution</h3>
+            <p>Agent claims tests ran. Ledger says they did not.</p>
+          </button>
+          <button type="button" data-sim="kayfabe" class="detector-card">
+            <span>D5</span>
+            <h3>Kayfabe tests</h3>
+            <p>Function body deleted. Tests still pass.</p>
+          </button>
+          <button type="button" data-sim="coverage" class="detector-card">
+            <span>D6</span>
+            <h3>Coverage delta</h3>
+            <p>Changed lines never executed under the suite.</p>
+          </button>
+        </div>
+      </section>
+
+      <section id="market" class="market-section" aria-labelledby="market-title">
+        <div class="section-heading">
+          <p class="eyebrow">YC pitch</p>
+          <h2 id="market-title">The new row below code review.</h2>
+          <p>
+            Greptile, CodeRabbit, Qodo, and Graphite review code. LangSmith-style observability shows traces. Pinocchio verifies the agent's claim against evidence and blocks false endings.
+          </p>
+        </div>
+        <div class="market-grid">
+          <article>
+            <strong>Wedge</strong>
+            <p>Individual devs running Codex or Claude Code who got burned by a green-but-fake fix.</p>
+          </article>
+          <article>
+            <strong>Expansion</strong>
+            <p>Team CI checks, repo honesty trends, agent leaderboards, and compliance exports.</p>
+          </article>
+          <article>
+            <strong>Moat</strong>
+            <p>A cheat corpus: every blocked lie becomes labeled training data for detector N+1.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="ship" class="ship-section" aria-labelledby="ship-title">
+        <div class="section-heading compact">
+          <p class="eyebrow">Ship surfaces</p>
+          <h2 id="ship-title">One engine, three ways into the workflow.</h2>
+        </div>
+        <div class="surface-list">
+          <article>
+            <span>CLI</span>
+            <h3>pinocchio .</h3>
+            <p>Open-source, local, immediate trust wedge.</p>
+          </article>
+          <article>
+            <span>Hook</span>
+            <h3>.codex/hooks.json</h3>
+            <p>Stop-hook veto blocks dishonest agent turns.</p>
+          </article>
+          <article>
+            <span>CI</span>
+            <h3>GitHub Action</h3>
+            <p>Paid team gate for agent-written pull requests.</p>
+          </article>
+        </div>
+        <div class="transparency-box">
+          <h3>Full transparency API</h3>
+          <p>
+            `/api/status` exposes harness health, `/api/events` streams terminal output, `/api/memory` returns stored run receipts, and `/api/report` returns the last Pinocchio contract report.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>Built by Codex. Built for the moment Codex needs to hear no.</span>
+      <a href="#top">Back to top</a>
+    </footer>
+
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>
