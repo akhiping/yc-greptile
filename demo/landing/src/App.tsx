@@ -5,23 +5,22 @@ import {
   CheckCircle2,
   CircleStop,
   Code2,
-  Gamepad2,
+  Copy,
+  Download,
+  ExternalLink,
+  Github,
   GitBranch,
+  Network,
   Play,
-  RotateCcw,
   ShieldCheck,
-  ZoomIn,
-  ZoomOut,
   Sparkles,
   Terminal,
-  Trophy,
   XCircle,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import brandIcon from "../assets/brand-icon.png";
 import heroImage from "../assets/pinocchio-hero.png";
 import mascotImage from "../assets/mascot-verifier.png";
-import mascotPixelImage from "../assets/mascot-verifier-pixel.png";
 
 type RunKind = "demo" | "verify" | "loop-dry" | "loop-codex";
 type AgentKind = "codex" | "claude" | "terminal";
@@ -116,6 +115,10 @@ const loopSteps = [
   ["04", "Stop hook blocks", "A false ending becomes the next prompt instead of a final answer."],
 ];
 
+const GITHUB_URL = "https://github.com/akhiping/yc-greptile";
+const INSTALL_COMMAND =
+  "git clone https://github.com/akhiping/yc-greptile.git && cd yc-greptile && git checkout sameer && python -m pip install -r pinocchio/requirements.txt";
+
 const runLabels: Record<RunKind, string> = {
   demo: "Caught-cheat reel",
   verify: "Run verifier",
@@ -159,41 +162,81 @@ function scenarioTerminal(scenario: Scenario) {
 
 function PinocchioAvatar({
   noseLength,
-  zoom,
-  rotation,
-  pixelMode,
   scrollProgress,
 }: {
   noseLength: number;
-  zoom: number;
-  rotation: number;
-  pixelMode: boolean;
   scrollProgress: number;
 }) {
   const lieScale = 1 + Math.min(0.18, noseLength / 90);
   const scrollScale = 1 - scrollProgress * 0.12;
   const scrollLift = scrollProgress * -20;
-  const liveRotation = rotation + scrollProgress * 7;
+  const liveRotation = -2 + scrollProgress * 7;
 
   return (
-    <div className={`pinocchio-avatar ${pixelMode ? "pixel-mode" : ""}`} aria-hidden="true">
+    <div className="pinocchio-avatar" aria-hidden="true">
       <div
         className="mascot-live-frame"
         style={{
           opacity: 1 - scrollProgress * 0.22,
-          transform: `translateY(${scrollLift}px) rotate(${liveRotation}deg) scale(${zoom * lieScale * scrollScale})`,
+          transform: `translateY(${scrollLift}px) rotate(${liveRotation}deg) scale(${lieScale * scrollScale})`,
         }}
       >
-        <img
-          alt=""
-          className="mascot-live-image"
-          src={pixelMode ? mascotPixelImage : mascotImage}
-        />
+        <img alt="" className="mascot-live-image" src={mascotImage} />
         <span className="mascot-greeting">truth check live</span>
       </div>
       <div className="avatar-score">
         <Sparkles size={15} />
         nose {noseLength} cm
+      </div>
+    </div>
+  );
+}
+
+function VerifierModel({
+  scenario,
+  streaming,
+  hoveredDetector,
+}: {
+  scenario?: Scenario;
+  streaming: boolean;
+  hoveredDetector: string | null;
+}) {
+  const detectorStates = ["D1", "D2", "D3", "D4", "D5"].map((code) => {
+    const result = scenario?.report.results.find((item) => item.check_type.startsWith(code));
+    return {
+      code,
+      verdict: result?.verdict ?? "UNCERTAIN",
+      active: hoveredDetector === code || scenario?.headline_detector === code,
+    };
+  });
+  const lies = scenario?.report.summary.lies ?? 2;
+  const nose = scenario?.report.summary.nose_length ?? 16;
+
+  return (
+    <div className={`verifier-model ${streaming ? "running" : ""}`} aria-label="Live detector model">
+      <div className="model-header">
+        <span>
+          <Network size={16} />
+          Python detector graph
+        </span>
+        <strong>{lies ? `${lies} lies` : "clean"}</strong>
+      </div>
+      <div className="model-field">
+        <div className="model-core">
+          <span>diff</span>
+          <strong>claim</strong>
+          <em>pytest</em>
+        </div>
+        {detectorStates.map((item, index) => (
+          <span
+            className={`model-node ${classForVerdict(item.verdict)} ${item.active ? "active" : ""}`}
+            data-index={index}
+            key={item.code}
+          >
+            {item.code}
+          </span>
+        ))}
+        <span className="nose-vector" style={{ width: `${Math.max(24, Math.min(92, nose * 5.2))}%` }} />
       </div>
     </div>
   );
@@ -254,10 +297,10 @@ export function App() {
   const [mode, setMode] = useState("cheat");
   const [streaming, setStreaming] = useState(false);
   const [transitionTick, setTransitionTick] = useState(0);
-  const [mascotZoom, setMascotZoom] = useState(1);
-  const [mascotRotation, setMascotRotation] = useState(0);
-  const [pixelMode, setPixelMode] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [hoveredDetector, setHoveredDetector] = useState<string | null>(null);
+  const [copiedInstall, setCopiedInstall] = useState(false);
+  const [pointer, setPointer] = useState({ x: 72, y: 18 });
   const [terminalOutput, setTerminalOutput] = useState(
     `$ python demo/landing/server.py
 ready: choose a round
@@ -274,6 +317,10 @@ PINOCCHIO watches:
   const noseLength = activeScenario?.report.summary.nose_length ?? 16;
   const lieCount = activeScenario?.report.summary.lies ?? 2;
   const appStateClass = lieCount > 0 ? "lie-alert" : "truth-clear";
+  const appStyle = {
+    "--pointer-x": `${pointer.x}%`,
+    "--pointer-y": `${pointer.y}%`,
+  } as CSSProperties;
 
   const proofStats = useMemo(() => {
     const summary = activeScenario?.report.summary;
@@ -369,6 +416,16 @@ PINOCCHIO watches:
     };
   }
 
+  async function copyInstallCommand() {
+    try {
+      await navigator.clipboard.writeText(INSTALL_COMMAND);
+      setCopiedInstall(true);
+      window.setTimeout(() => setCopiedInstall(false), 1400);
+    } catch {
+      setTerminalOutput((current) => `${current}\ninstall command: ${INSTALL_COMMAND}\n`);
+    }
+  }
+
   useEffect(() => {
     void loadStatus();
     void loadMemory();
@@ -394,6 +451,29 @@ PINOCCHIO watches:
     return () => window.removeEventListener("scroll", update);
   }, []);
 
+  useEffect(() => {
+    const elements = Array.from(
+      document.querySelectorAll(
+        "section:not(.hero-section), .proof-board article, .scenario-card, .scenario-stage, .workbench, .memory-panel, .loop-step, .detector-card, .market-grid article, .surface-list article, .transparency-box",
+      ),
+    );
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("is-visible");
+          }
+        });
+      },
+      { rootMargin: "0px 0px -10% 0px", threshold: 0.12 },
+    );
+    elements.forEach((element) => {
+      element.classList.add("reveal");
+      observer.observe(element);
+    });
+    return () => observer.disconnect();
+  }, [activeScenarioId, receipts.length, scenarioIndex.length]);
+
   return (
     <>
       <header className="site-header">
@@ -409,13 +489,24 @@ PINOCCHIO watches:
           <a href="#pitch">Pitch</a>
           <a href="#ship">Ship</a>
         </nav>
-        <a className="header-cta" href="#harness">
+        <button className="header-cta" disabled={streaming} onClick={() => startRun("demo")} type="button">
           <Play size={16} />
           Run demo
-        </a>
+        </button>
       </header>
 
-      <main className={`app-shell ${appStateClass}`} id="top">
+      <main
+        className={`app-shell ${appStateClass}`}
+        id="top"
+        onPointerMove={(event) => {
+          const rect = event.currentTarget.getBoundingClientRect();
+          setPointer({
+            x: Number((((event.clientX - rect.left) / rect.width) * 100).toFixed(2)),
+            y: Number((((event.clientY - rect.top) / rect.height) * 100).toFixed(2)),
+          });
+        }}
+        style={appStyle}
+      >
         <section className="hero-section" aria-labelledby="hero-title">
           <img className="hero-image" src={heroImage} alt="" />
           <div className="hero-overlay" />
@@ -427,19 +518,32 @@ PINOCCHIO watches:
                 AI code review checks the code. Pinocchio checks the agent's story. If Codex fakes green by moving tests, hardcoding outputs, or claiming phantom runs, the nose catches it before the lie ships.
               </p>
               <div className="hero-actions">
-                <a className="button primary" href="#arena">
-                  <Gamepad2 size={18} />
-                  Play the lie
+                <button className="button primary" disabled={streaming} onClick={() => startRun("demo")} type="button">
+                  <Play size={18} />
+                  Run live demo
+                </button>
+                <a className="button secondary" href={GITHUB_URL} rel="noreferrer" target="_blank">
+                  <Github size={18} />
+                  Git repo
                 </a>
-                <a className="button secondary" href="#pitch">
-                  <Trophy size={18} />
-                  See the wedge
-                </a>
+                <button className="button secondary" onClick={() => void copyInstallCommand()} type="button">
+                  <Download size={18} />
+                  {copiedInstall ? "Copied" : "Install CLI"}
+                </button>
               </div>
               <div className="proof-strip" aria-label="Product highlights">
                 <span>Blocks false endings</span>
                 <span>5 live cheat rounds</span>
                 <span>Built for Codex workflows</span>
+              </div>
+              <div className="install-ribbon" aria-label="CLI install command">
+                <code>{INSTALL_COMMAND}</code>
+                <button aria-label="Copy CLI install command" onClick={() => void copyInstallCommand()} type="button">
+                  <Copy size={16} />
+                </button>
+                <a aria-label="Open GitHub repository" href={GITHUB_URL} rel="noreferrer" target="_blank">
+                  <ExternalLink size={16} />
+                </a>
               </div>
             </div>
 
@@ -450,44 +554,15 @@ PINOCCHIO watches:
                 <span className="pill">live on Render</span>
               </div>
               <PinocchioAvatar
-                key={`avatar-${transitionTick}-${pixelMode}`}
+                key={`avatar-${transitionTick}`}
                 noseLength={noseLength}
-                pixelMode={pixelMode}
-                rotation={mascotRotation}
                 scrollProgress={scrollProgress}
-                zoom={mascotZoom}
               />
-              <div className="mascot-controls" aria-label="Mascot controls">
-                <button
-                  aria-label="Zoom mascot out"
-                  onClick={() => setMascotZoom((value) => Math.max(0.78, Number((value - 0.08).toFixed(2))))}
-                  type="button"
-                >
-                  <ZoomOut size={16} />
-                </button>
-                <button
-                  aria-label="Rotate mascot"
-                  onClick={() => setMascotRotation((value) => value + 18)}
-                  type="button"
-                >
-                  <RotateCcw size={16} />
-                </button>
-                <button
-                  aria-label="Zoom mascot in"
-                  onClick={() => setMascotZoom((value) => Math.min(1.28, Number((value + 0.08).toFixed(2))))}
-                  type="button"
-                >
-                  <ZoomIn size={16} />
-                </button>
-                <button
-                  aria-pressed={pixelMode}
-                  className={pixelMode ? "active" : ""}
-                  onClick={() => setPixelMode((value) => !value)}
-                  type="button"
-                >
-                  PX
-                </button>
-              </div>
+              <VerifierModel
+                hoveredDetector={hoveredDetector}
+                scenario={activeScenario}
+                streaming={streaming}
+              />
               <div className="nose-meter" aria-label="Nose length">
                 <span className="nose-face" />
                 <span className="nose-bar">
@@ -543,6 +618,8 @@ PINOCCHIO watches:
                 <button
                   className={`scenario-card ${activeScenarioId === item.id ? "active" : ""}`}
                   key={item.id}
+                  onMouseEnter={() => setHoveredDetector(item.detector)}
+                  onMouseLeave={() => setHoveredDetector(null)}
                   onClick={() => void loadScenario(item.id)}
                   type="button"
                 >
@@ -723,6 +800,8 @@ PINOCCHIO watches:
               <button
                 className="detector-card"
                 key={code}
+                onMouseEnter={() => setHoveredDetector(code)}
+                onMouseLeave={() => setHoveredDetector(null)}
                 onClick={() => void loadScenario(detectorToScenario[code] ?? "test-tampering")}
                 type="button"
               >
@@ -772,6 +851,10 @@ PINOCCHIO watches:
               <span>CLI</span>
               <h3>pinocchio .</h3>
               <p>Open-source, local, immediate trust wedge.</p>
+              <button className="mini-action" onClick={() => void copyInstallCommand()} type="button">
+                <Copy size={15} />
+                {copiedInstall ? "Copied install" : "Copy install"}
+              </button>
             </article>
             <article>
               <ShieldCheck size={22} />
@@ -784,6 +867,10 @@ PINOCCHIO watches:
               <span>CI</span>
               <h3>GitHub Action</h3>
               <p>Paid team gate for agent-written pull requests.</p>
+              <a className="mini-action" href={GITHUB_URL} rel="noreferrer" target="_blank">
+                <Github size={15} />
+                Open repo
+              </a>
             </article>
           </div>
           <div className="transparency-box">
