@@ -9,7 +9,10 @@ import sys
 from pathlib import Path
 from typing import Any, Mapping, TextIO
 
-from pinocchio import CONTRACT_PATH, PinocchioError, validate_report
+try:
+    from pinocchio import CONTRACT_PATH, PinocchioError, validate_report
+except ImportError:  # When imported as pinocchio.nose_ui from the repo root.
+    from pinocchio.pinocchio import CONTRACT_PATH, PinocchioError, validate_report
 
 
 COLORS = {
