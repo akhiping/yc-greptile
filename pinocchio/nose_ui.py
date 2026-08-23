@@ -138,6 +138,14 @@ class NoseDisplay:
         self.phase = phase
         self._refresh()
 
+    def new_attempt(self) -> None:
+        """Clear results for a new attempt. Nose length carries over."""
+        self.results = []
+        self.verified = 0
+        self.lies = 0
+        self.uncertain = 0
+        self._refresh()
+
     def add_result(self, result: dict[str, Any], animate: bool = True) -> None:
         self.results.append(result)
         verdict = result["verdict"]
