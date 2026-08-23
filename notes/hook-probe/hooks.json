@@ -1,0 +1,66 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python C:/Users/nagar/Downloads/YC Hackathon/notes/hook-probe/probe.py",
+            "timeout": 15,
+            "statusMessage": "probe: SessionStart"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python C:/Users/nagar/Downloads/YC Hackathon/notes/hook-probe/probe.py",
+            "timeout": 15,
+            "statusMessage": "probe: UserPromptSubmit"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python C:/Users/nagar/Downloads/YC Hackathon/notes/hook-probe/probe.py",
+            "timeout": 15,
+            "statusMessage": "probe: PreToolUse"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python C:/Users/nagar/Downloads/YC Hackathon/notes/hook-probe/probe.py",
+            "timeout": 15,
+            "statusMessage": "probe: PostToolUse"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python C:/Users/nagar/Downloads/YC Hackathon/notes/hook-probe/probe.py",
+            "timeout": 15,
+            "statusMessage": "probe: Stop"
+          }
+        ]
+      }
+    ]
+  }
+}
