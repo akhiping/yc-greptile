@@ -210,7 +210,6 @@ function VerifierModel({
     };
   });
   const lies = scenario?.report.summary.lies ?? 2;
-  const nose = scenario?.report.summary.nose_length ?? 16;
 
   return (
     <div className={`verifier-model ${streaming ? "running" : ""}`} aria-label="Live detector model">
@@ -236,7 +235,6 @@ function VerifierModel({
             {item.code}
           </span>
         ))}
-        <span className="nose-vector" style={{ width: `${Math.max(24, Math.min(92, nose * 5.2))}%` }} />
       </div>
     </div>
   );

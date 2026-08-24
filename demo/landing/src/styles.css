@@ -406,10 +406,10 @@ h1 {
 }
 
 .lie-alert .hero-console {
-  border-color: rgba(255, 69, 58, 0.56);
+  border-color: rgba(255, 247, 236, 0.18);
   box-shadow:
-    0 0 0 1px rgba(255, 69, 58, 0.34),
-    0 0 60px rgba(255, 69, 58, 0.22),
+    0 0 0 1px rgba(255, 109, 26, 0.16),
+    0 0 54px rgba(255, 109, 26, 0.14),
     var(--shadow);
   animation: lieImpact 620ms cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -665,20 +665,6 @@ h1 {
 .verifier-model.running .model-node {
   transform: translate(-50%, -50%) scale(1.14);
   box-shadow: 0 0 28px rgba(84, 216, 211, 0.22);
-}
-
-.nose-vector {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  height: 8px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--yc), var(--red));
-  box-shadow: 0 0 26px rgba(255, 69, 58, 0.28);
-  transform: translateY(-50%);
-  transform-origin: left center;
-  transition: width 360ms cubic-bezier(0.16, 1, 0.3, 1);
-  animation: noseVector 1.8s ease-in-out infinite;
 }
 
 .status-dot {
@@ -1818,16 +1804,6 @@ pre {
   }
   50% {
     transform: translate(-50%, -50%) scale(1.05);
-  }
-}
-
-@keyframes noseVector {
-  0%,
-  100% {
-    filter: saturate(1);
-  }
-  50% {
-    filter: saturate(1.34);
   }
 }
 
