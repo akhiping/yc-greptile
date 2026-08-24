@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: pinocchio-agent-verifier
+    runtime: python
+    plan: free
+    buildCommand: pip install -r pinocchio/requirements.txt
+    startCommand: python demo/landing/server.py
+    healthCheckPath: /api/status
+    autoDeploy: true
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+      - key: PINOCCHIO_WEB_PORT
+        value: "10000"

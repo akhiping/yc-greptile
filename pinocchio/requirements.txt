@@ -1,1 +1,7 @@
 openai>=1.0
+rich
+unidiff
+anthropic
+gitpython
+requests
+pytest
